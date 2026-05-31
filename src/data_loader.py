@@ -1,0 +1,1 @@
+# Đọc CSV → chuyển thành ma trận NumPy 9x9

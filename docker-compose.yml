@@ -1,0 +1,9 @@
+services:
+  sudoku:
+    build: .
+    container_name: sudoku_ai
+
+    volumes:
+      - .:/app
+
+    tty: true
