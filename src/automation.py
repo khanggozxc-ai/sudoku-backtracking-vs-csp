@@ -61,6 +61,8 @@ for index, row in df.iterrows():
 
 results_df = pd.DataFrame(results)
 
+print(results_df.columns)
+
 results_df["time_ms"] = results_df["time_ms"].round(3)
 
 # THứ tự độ khó
@@ -71,7 +73,7 @@ difficulty_order = [
     "Extreme"
 ]
 
-results_df[difficulty] = pd.Categorical(
+results_df["difficulty"] = pd.Categorical(
     results_df["difficulty"],
     categories = difficulty_order,
     ordered = True
@@ -108,7 +110,9 @@ print("\nEMPTY CELLS STATISTICS")
 print("="*60)
 
 empty_summary = (
-    results_df.groupby("difficulty")["empty_cells"].agg(["mean", "min", "max"])
+    results_df
+    .groupby("difficulty", observed=True)["empty_cells"]
+    .agg(["mean", "min", "max"])
 )
 
 print(empty_summary)
@@ -148,7 +152,7 @@ print()
 print(
     results_df["difficulty"]
     .value_counts()
-    .sort_index
+    .sort_index()
 )
 
 print()

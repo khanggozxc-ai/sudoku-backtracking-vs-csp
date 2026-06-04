@@ -90,49 +90,51 @@ def solve_backtracking(board, stats):
             
     return False # nếu thử từ 1-9 mà không có số nào hợp lệ, trả về False 
 
-#=====================================
-# Kiểm tra hàng
-#=====================================
+# =====================================
+# Kiểm tra nghiệm Sudoku
+# =====================================
+
 def verify_solution(board):
-        
+
+    # ==============================
+    # Kiểm tra hàng
+    # ==============================
+
     for row in range(9):
-        
+
         row_values = board[row]
-            
-        set(row_values)
-            
-        if set(row_values) != set(range(1,10)):
-                return False
-            
-#====================================
-# Kiểm tra cột
-#====================================
-    for col in range(9):
-            
-        col_values = board[:, col]
-            
-        if set(col_values) != set(range(1,10)):
+
+        if set(row_values) != set(range(1, 10)):
             return False
-            
-#====================================
-# Kiểm tra box 3x3
-#====================================
+
+    # ==============================
+    # Kiểm tra cột
+    # ==============================
+
+    for col in range(9):
+
+        col_values = board[:, col]
+
+        if set(col_values) != set(range(1, 10)):
+            return False
+
+    # ==============================
+    # Kiểm tra box 3x3
+    # ==============================
 
     for box_row in range(0, 9, 3):
-            
+
         for box_col in range(0, 9, 3):
-                
+
             box_values = []
-                
+
             for i in range(box_row, box_row + 3):
-                    
+
                 for j in range(box_col, box_col + 3):
-                        
+
                     box_values.append(board[i][j])
-                        
-                if set(box_values) != set(range(1,10)):
-                    
-                    return False
-                
-        return True
-     
+
+            if set(box_values) != set(range(1, 10)):
+                return False
+
+    return True
