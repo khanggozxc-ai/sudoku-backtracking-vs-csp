@@ -1,6 +1,7 @@
+import os
 import pandas as pd
-from data_loader import string_to_board
-from tracker import benchmark_backtracking
+from data_loader import(string_to_board, count_empty_cells)
+from tracker import benchmark_backtracking 
 
 # đọc file dữ liệu chứa các đề tài sudoku đầu vào
 
@@ -11,6 +12,7 @@ df = pd.read_csv(
 # Khởi tạo danh sách rỗng để lưu trữ kết quả đo dạc của từng bài
 
 results = []
+
 
 #==========================================
 # Vòng lặp quét dữ liệu + đo dạc hiệu ứng
@@ -23,6 +25,8 @@ for index, row in df.iterrows():
     
     board = string_to_board(puzzle) # Chuyển đổi ma trận text thành ma trận 9x9
     
+    empty_cells = count_empty_cells(board)
+    
     benchmark = benchmark_backtracking(board) # Kích hoạt bộ bấm giờ để đo đạc thời gian(ms) và số bước giải
     
     # Ghi nhận kết quả vào kho lưu trữ
@@ -30,7 +34,10 @@ for index, row in df.iterrows():
     results.append({
         "puzzle_id": index + 1,
         "difficulty": difficulty,
+        "empty_cells": empty_cells,
         "time_ms": benchmark["time_ms"],
+        "solved": benchmark["solved"],
+        "correct": benchmark["correct"],
         "steps": benchmark["steps"]
     })
     
@@ -43,7 +50,7 @@ for index, row in df.iterrows():
             f"{difficulty:<8} | "
             f"{benchmark['time_ms']:.3f} ms | "
             f"Steps: {benchmark['steps']}"
-            )
+        )
 
 
 #=======================================
@@ -53,26 +60,74 @@ for index, row in df.iterrows():
 # CHuyển đổi mảng kết quả thành DataFrame để dễ thao tác
 
 results_df = pd.DataFrame(results)
+
 results_df["time_ms"] = results_df["time_ms"].round(3)
+
+# THứ tự độ khó
+difficulty_order = [
+    "Easy",
+    "Medium",
+    "Hard",
+    "Extreme"
+]
+
+results_df[difficulty] = pd.Categorical(
+    results_df["difficulty"],
+    categories = difficulty_order,
+    ordered = True
+)
 
 print("\n Sample Resulft")
 print("="*60)
 
 print(results_df.head(10).to_string(index=False))
 
-# Thống kê hiệu năng trung bình theo từng độ khó
+#===============================
+# Kiểm tra độ chính xác
+#===============================
+print("\nSolution Verification")
+print("="*60)
 
-print("\nHiệu năng trung bình theo độ khó")
+print(results_df[["solved", "correct"]].value_counts())
+
+total = len(results_df)
+
+solved_count = results_df["solved"].sum()
+
+correct_count = results_df["correct"].sum()
+
+print()
+
+print(f"Solved: {solved_count}/{total}")
+
+print(f"Correct: {correct_count}/{total}")
+
+# Thống kê Empty Cells
+
+print("\nEMPTY CELLS STATISTICS")
+print("="*60)
+
+empty_summary = (
+    results_df.groupby("difficulty")["empty_cells"].agg(["mean", "min", "max"])
+)
+
+print(empty_summary)
+
+#======================
+# THỐNG KÊ HIỆU NĂNG
+#======================
+print("\nPERFORMANCE SUMMARY")
+print("="*60)
 
 summary = results_df.groupby("difficulty").agg({
-    "time_ms": "mean",
-    "steps": "mean"
+    "time_ms": ["mean", "min", "max"],
+    "steps": ["mean", "min", "max"]
 })
 
 print(summary.round(2))
 
 # Xuất toàn bộ kết quả ra file CSV results
-import os
+
 
 os.makedirs("results", exist_ok=True)
 
@@ -80,28 +135,26 @@ results_df.to_csv(
     "results/backtracking_results.csv",
     index=False
 )
+# Tổng kết
 
 print("\n" + "="*60)
 print("BACKTRACKING BENCHMARK SUMMARY")
 print("="*60)
 
-print(f"Total puzzles: {len(results_df)}")
+print(f"Total puzzles: {(total)}")
+
+print()
 
 print(
     results_df["difficulty"]
     .value_counts()
+    .sort_index
 )
 
-print("\nAverage Performance")
-
-summary = results_df.groupby("difficulty").agg({
-    "time_ms": "mean",
-    "steps": "mean"
-})
-
-print(summary.round(2))
+print()
 
 print("\nResults saved:")
+
 print("results/backtracking_results.csv")
 
 print("="*60)

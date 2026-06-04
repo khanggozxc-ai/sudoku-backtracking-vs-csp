@@ -3,7 +3,12 @@
 #================================
 # Hàm tìm ô trống đầu tiên
 #================================
-
+class SolverStats:
+    
+    def __init__(self):
+        self.steps = 0
+        
+        
 def find_empty(board): # Tìm ô trống đầu tiên trên bảng Sudoku
     
     for row in range(9): # Duyệt qua từng hàng
@@ -59,10 +64,7 @@ def is_valid_board(board, num, pos):
 # Hàm giải Sudoku bằng thuật toán Backtracking
 #===============================================
 
-class SolverStats:
-    
-    def __init__(self):
-        self.steps = 0
+
         
 def solve_backtracking(board, stats): 
     
@@ -88,36 +90,49 @@ def solve_backtracking(board, stats):
             
     return False # nếu thử từ 1-9 mà không có số nào hợp lệ, trả về False 
 
-# Ví dụ sử dụng
-if __name__ == "__main__":
-    
-    test_board = [
-        [5,3,0,0,7,0,0,0,0],
-        [6,0,0,1,9,5,0,0,0],
-        [0,9,8,0,0,0,0,6,0],
-        [8,0,0,0,6,0,0,0,3],
-        [4,0,0,8,0,3,0,0,1],
-        [7,0,0,0,2,0,0,0,6],
-        [0,6,0,0,0,0,2,8,0],
-        [0,0,0,4,1,9,0,0,5],
-        [0,0,0,0,8,0,0,7,9]
-    ]
-    
-    print("\nRESULT")
-    print("=" * 30)
+#=====================================
+# Kiểm tra hàng
+#=====================================
+def verify_solution(board):
+        
+    for row in range(9):
+        
+        row_values = board[row]
+            
+        set(row_values)
+            
+        if set(row_values) != set(range(1,10)):
+                return False
+            
+#====================================
+# Kiểm tra cột
+#====================================
+    for col in range(9):
+            
+        col_values = board[:, col]
+            
+        if set(col_values) != set(range(1,10)):
+            return False
+            
+#====================================
+# Kiểm tra box 3x3
+#====================================
 
-    print("Sudoku Board:\n")
-
-    for row in test_board:
-        print(row)
-
-    stats = SolverStats()
-
-    solve_backtracking(test_board, stats)
-
-    print("\nSolved Sudoku Board:\n")
-
-    for row in test_board:
-        print(row)
-
-    print(f"\nSteps: {stats.steps}")
+    for box_row in range(0, 9, 3):
+            
+        for box_col in range(0, 9, 3):
+                
+            box_values = []
+                
+            for i in range(box_row, box_row + 3):
+                    
+                for j in range(box_col, box_col + 3):
+                        
+                    box_values.append(board[i][j])
+                        
+                if set(box_values) != set(range(1,10)):
+                    
+                    return False
+                
+        return True
+     
