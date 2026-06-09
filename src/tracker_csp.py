@@ -14,14 +14,14 @@ def benchmark_csp(board):
     start_time = time.perf_counter() # Bắt đầu đo hiệu suất
     
     solved = solve_csp(board, stats) # Giải Sudoku và truyền đối tượng stats để theo dõi số bước
-    print("Benchmark Steps =", stats.steps)
     
-    is_correct = verify_solution(board)
     
     end_time = time.perf_counter() # Kết thúc đo hiệu suất
     
+    is_correct = verify_solution(board)
+    
     # Tính thời gian thực thi
-    excution_time = (
+    execution_time = (
         
         end_time - start_time 
         
@@ -30,7 +30,7 @@ def benchmark_csp(board):
     return {
         "solved": solved,
         "correct": is_correct,
-        "time_ms": excution_time,
+        "time_ms": execution_time,
         "steps": stats.steps
     }
     

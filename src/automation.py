@@ -61,8 +61,6 @@ for index, row in df.iterrows():
 
 results_df = pd.DataFrame(results)
 
-print(results_df.columns)
-
 results_df["time_ms"] = results_df["time_ms"].round(3)
 
 # THứ tự độ khó
@@ -98,9 +96,7 @@ solved_count = results_df["solved"].sum()
 
 correct_count = results_df["correct"].sum()
 
-print()
-
-print(f"Solved: {solved_count}/{total}")
+print(f"\nSolved: {solved_count}/{total}")
 
 print(f"Correct: {correct_count}/{total}")
 
@@ -123,7 +119,7 @@ print(empty_summary)
 print("\nPERFORMANCE SUMMARY")
 print("="*60)
 
-summary = results_df.groupby("difficulty").agg({
+summary = results_df.groupby("difficulty", observed=True).agg({
     "time_ms": ["mean", "min", "max"],
     "steps": ["mean", "min", "max"]
 })
@@ -131,7 +127,6 @@ summary = results_df.groupby("difficulty").agg({
 print(summary.round(2))
 
 # Xuất toàn bộ kết quả ra file CSV results
-
 
 os.makedirs("results", exist_ok=True)
 
@@ -145,17 +140,13 @@ print("\n" + "="*60)
 print("BACKTRACKING BENCHMARK SUMMARY")
 print("="*60)
 
-print(f"Total puzzles: {(total)}")
-
-print()
+print(f"Total puzzles: {total}\n")
 
 print(
     results_df["difficulty"]
     .value_counts()
     .sort_index()
 )
-
-print()
 
 print("\nResults saved:")
 

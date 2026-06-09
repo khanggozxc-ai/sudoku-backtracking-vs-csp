@@ -56,6 +56,7 @@ def get_domain(board, row, col):
 def find_mrv_cell(board):
     
     best_cell = None
+    best_domain = []
     best_domain_size = 10
     
     for row in range(9):
@@ -66,18 +67,23 @@ def find_mrv_cell(board):
                 
                 domain = get_domain(board, row, col)
                 
+                if len(domain) == 0:
+                    
+                    return (row, col), domain
+                
                 if len(domain) < best_domain_size:
                     
                     best_domain_size = len(domain)
                     best_cell = (row, col)
+                    best_domain = domain
                     
-    return best_cell
+    return best_cell, best_domain
 
 
 def solve_csp(board, stats):
     # Chọn ô theo MRV
     
-    empty =find_mrv_cell(board)
+    empty, domain =find_mrv_cell(board)
     
     # Không còn ô trống
     
@@ -86,10 +92,6 @@ def solve_csp(board, stats):
     
     row, col = empty
     
-    # Lấy domain
-    
-    domain = get_domain(board, row, col)
-
     # Thử từng giá trị trong domain
     
     for num in domain:
@@ -114,9 +116,8 @@ def verify_solution(board):
     
     for row in range(9):
 
-        row_values = board[row]
-
-        if set(row_values) != set(range(1, 10)):
+        if set(board[row]) != target:
+            
             return False
         
     # Kiểm tra cột
@@ -126,19 +127,22 @@ def verify_solution(board):
         col_values = [board[i][col] for i in range(9)]
 
         if set(col_values) != target:
+            
             return False
         
     # Kiểm tra box 3x3
     
     for box_row in range(0, 9, 3):
+        
         for box_col in range(0, 9, 3):
             
             values = []
             
             for i in range(box_row, box_row + 3):
+                
                 for j in range(box_col, box_col + 3):
                     
-                    values.append(board [i][j])
+                    values.append(board[i][j])
                     
             if set(values) != target:
                 return False
@@ -161,9 +165,11 @@ if __name__ == "__main__":
     
     stats = CSPStats()
     
-    print("\nSolver")
+    print("Bàn cờ mẫu:")
     
-    print(board)
+    for row in board:
+        print(row)
+    
     solved = solve_csp(board, stats)
     
     print("\nResult")
@@ -172,14 +178,13 @@ if __name__ == "__main__":
     print("Solved:", solved)
     print("Steps:", stats.steps)
     
-    print("\nBoard:\n")
-    
+    print("\nBoard sau khi giải:\n")
     for row in board:
         print(row)
-    
+   
+    print("Kiểm tra chính xác:")
     print("Correct:", verify_solution(board))
     
-    print("Steps:", stats.steps)
     
 
     

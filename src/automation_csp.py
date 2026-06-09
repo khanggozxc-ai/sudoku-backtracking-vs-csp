@@ -29,8 +29,6 @@ for index, row in df.iterrows():
     
     benchmark = benchmark_csp(board) # Kích hoạt bộ bấm giờ để đo đạc thời gian(ms) và số bước giải
     
-    print(index, row["difficulty"])
-    
     # Ghi nhận kết quả vào kho lưu trữ
     
     results.append({
@@ -102,9 +100,7 @@ solved_count = results_df["solved"].sum()
 
 correct_count = results_df["correct"].sum()
 
-print()
-
-print(f"Solved: {solved_count}/{total}")
+print(f"\nSolved: {solved_count}/{total}")
 
 print(f"Correct: {correct_count}/{total}")
 
@@ -139,6 +135,8 @@ print(summary.round(2))
 
 os.makedirs("results", exist_ok=True)
 
+print(results_df["difficulty"].value_counts())
+
 results_df.to_csv(
     "results/csp_results.csv",
     index=False
@@ -146,20 +144,16 @@ results_df.to_csv(
 # Tổng kết
 
 print("\n" + "="*60)
-print("CSP SUMMARY")
+print("CSP BENCHMARK SUMMARY")
 print("="*60)
 
-print(f"Total puzzles: {(total)}")
-
-print()
+print(f"Total puzzles: {total}\n")
 
 print(
     results_df["difficulty"]
     .value_counts()
     .sort_index()
 )
-
-print()
 
 print("\nResults saved:")
 

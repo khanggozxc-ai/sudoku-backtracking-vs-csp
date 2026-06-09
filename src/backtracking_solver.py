@@ -9,7 +9,9 @@ class SolverStats:
         self.steps = 0
         
         
-def find_empty(board): # Tìm ô trống đầu tiên trên bảng Sudoku
+def find_empty(board): 
+    
+    """Tìm ô trống đầu tiên trên bảng Sudoku"""
     
     for row in range(9): # Duyệt qua từng hàng
         
@@ -63,8 +65,6 @@ def is_valid_board(board, num, pos):
 #===============================================
 # Hàm giải Sudoku bằng thuật toán Backtracking
 #===============================================
-
-
         
 def solve_backtracking(board, stats): 
     
@@ -96,15 +96,14 @@ def solve_backtracking(board, stats):
 
 def verify_solution(board):
 
+    target = set(range(1, 10))
     # ==============================
     # Kiểm tra hàng
     # ==============================
 
     for row in range(9):
 
-        row_values = board[row]
-
-        if set(row_values) != set(range(1, 10)):
+        if set(board[row]) != target:
             return False
 
     # ==============================
@@ -113,9 +112,9 @@ def verify_solution(board):
 
     for col in range(9):
 
-        col_values = board[:, col]
+        col_values = [board[i][col] for i in range(9)]
 
-        if set(col_values) != set(range(1, 10)):
+        if set(col_values) != target:
             return False
 
     # ==============================
@@ -134,7 +133,7 @@ def verify_solution(board):
 
                     box_values.append(board[i][j])
 
-            if set(box_values) != set(range(1, 10)):
+            if set(box_values) != target:
                 return False
 
     return True

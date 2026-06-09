@@ -16,26 +16,34 @@ difficulty_order = [
     "Extreme"
 ]
 
+for df_temp in [bt_summary, csp_summary]:
+    
+    df_temp["difficulty"] = pd.Categorical(
+        df_temp['difficulty'],
+        categories=difficulty_order,
+        ordered=True
+    )
+    
 #================================
 # So sánh thời gian trung bình
 #================================
 
-bt_summary = bt_summary.groupby("difficulty").agg({
+bt_summary = bt_summary.groupby("difficulty", observed=True).agg({
     "time_ms": "mean",
     "steps": "mean",
     "empty_cells": "mean"
 })
 
-csp_summary = csp_summary.groupby("difficulty").agg({
+csp_summary = csp_summary.groupby("difficulty", observed=True).agg({
     "time_ms": "mean",
     "steps": "mean"
 })
 
 print("BT difficulties:")
-print(bt_summary.index)
+print(list(bt_summary.index))
 
 print("\nCSP difficulties:")
-print(csp_summary.index)
+print(list(csp_summary.index))
 
 # Tạo bảng so sánh
 
@@ -63,6 +71,6 @@ print("="*60)
 
 print(comparison.round(2))
 
-print("\nAVERAGE EMPTY CELLS")
+print("\nAVERAGE EMPTY CELLS BY DIFFICULTY")
 print("="*60)
 print(bt_summary["empty_cells"].round(2))
