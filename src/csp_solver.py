@@ -4,8 +4,9 @@ class CSPStats:
     
     def __init__(self):
         self.steps = 0
+        self.backtracks =0
         
-def is_valid_board(board, num, pos, stats=None):
+def is_valid_board(board, num, pos):
     
     row, col = pos # tách tọa độ pos thành 2 biến riêng lẻ là hàng row và cột col
     
@@ -105,6 +106,8 @@ def solve_csp(board, stats):
             return True
             
         board[row][col] = 0
+        
+        stats.backtracks += 1
             
     return False
 
@@ -185,6 +188,7 @@ if __name__ == "__main__":
     print("Kiểm tra chính xác:")
     print("Correct:", verify_solution(board))
     
+    print("Backtracks:", stats.backtracks)
     
 
     
