@@ -6,7 +6,10 @@ from tracker import benchmark_backtracking
 # đọc file dữ liệu chứa các đề tài sudoku đầu vào
 
 df = pd.read_csv(
-    "data/processed_sudoku.csv"
+    "data/processed_sudoku.csv", 
+    dtype={"quizzes": str,
+           "solution": str
+           }
 )
 
 # Khởi tạo danh sách rỗng để lưu trữ kết quả đo dạc của từng bài

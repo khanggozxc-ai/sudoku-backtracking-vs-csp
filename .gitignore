@@ -1,13 +1,19 @@
+# Python rác hệ thống tự sinh
 __pycache__/
 *.pyc
 
+# Môi trường ảo của Python 
 .venv/
 venv/
 
+# Cấu hình riêng của VS Code trên máy bồ
 .vscode/
 
+# File chứa mật khẩu, token bí mật (nếu có)
 .env
 
+# File rác của hệ điều hành macOS (nếu bồ dùng Mac)
 .DS_Store
 
+# Bỏ qua file dữ liệu thô cồng kềnh, chỉ đẩy code lên Git thôi
 data/sudoku.csv

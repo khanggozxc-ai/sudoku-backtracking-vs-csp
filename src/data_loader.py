@@ -8,7 +8,13 @@ import pandas as pd
 
 def string_to_board(puzzle):
     """Chuyển chuỗi sudoku thành ma trận Numpy 9x9"""
-    numbers = [int(char) for char in puzzle]
+    puzzle = str(puzzle).strip()
+    
+    if len(puzzle) != 81:
+        raise ValueError(
+            f"Sudoku phải có 81 ký tự, nhưng hiện tại chỉ có {len(puzzle)} : {puzzle}"
+        )
+    numbers = [int(char) for char in str(puzzle)]
     board = np.array(numbers)
     return board.reshape(9, 9)
 

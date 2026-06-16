@@ -20,7 +20,7 @@ def benchmark_backtracking(board):
     is_correct = verify_solution(board) # Sau khi kết thúc đo hiệu xuất, thực hiện kiểm tra đồ án
     
     # Tính thời gian thực thi
-    excution_time = (
+    execution_time = (
         
         end_time - start_time 
         
@@ -29,7 +29,7 @@ def benchmark_backtracking(board):
     return {
         "solved": solved,
         "correct": is_correct,
-        "time_ms": excution_time,
+        "time_ms": execution_time,
         "steps": stats.steps
     }
     
