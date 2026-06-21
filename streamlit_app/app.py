@@ -2,203 +2,264 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import time
-import sys
-
-# Thêm đường dẫn src vào system path để import được module
-sys.path.append("./src")
-
-try:
-    # Nếu file Backtracking cũ của bạn tên là solver.py
-    from solver import find_empty_cell, is_valid
-    # File mới bạn vừa tối ưu
-    from csp_solver import initialize_domains, CSPStats
-except ImportError as e:
-    st.error(f"⚠️ Lỗi import: {e}. Vui lòng kiểm tra lại tên file và cấu trúc thư mục.")
+import os
 
 # ==========================================
-# CẤU HÌNH TRANG WEB VÀ CSS TÙY CHỈNH
+# 1. CẤU HÌNH TRANG WEB
 # ==========================================
-st.set_page_config(page_title="Sudoku AI Solver", page_icon="🧠", layout="wide")
-
-# Hàm render CSS tùy chỉnh để làm đẹp bảng Sudoku
-def render_css():
-    st.markdown(
-        """
-        <style>
-        .stDataFrame div[data-testid="stTable"] {
-            border: 2px solid black !important;
-        }
-        /* Customizing table header to hide it */
-        .stDataFrame th { display: none; }
-        .stDataFrame tr th { display: none; }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-render_css()
-
-st.title("🧠 Đồ án: Hệ thống giải Sudoku bằng Trí tuệ Nhân tạo")
-st.markdown("---")
+st.set_page_config(page_title="Sudoku AI Solver", page_icon="🦄", layout="wide")
 
 # ==========================================
-# CÁC HÀM GIẢI TÍCH HỢP ANIMATION RENDER UI
+# 2. BƠM CSS NỀN & HIỆU ỨNG KÍNH
 # ==========================================
-def solve_backtracking_animated(board, counter, board_placeholder, metrics_placeholder, sleep_time):
-    """Hàm Backtracking có vẽ lại bảng sau mỗi bước đi"""
-    empty_cell = find_empty_cell(board)
-    if not empty_cell:
-        return True
-        
-    row, col = empty_cell
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap');
+    
+    /* Nền Gradient cực mượt */
+    .stApp, [data-testid="stAppViewContainer"], #root {
+        background: linear-gradient(-45deg, #ffb3ba, #ffdfba, #ffffba, #baffc9, #bae1ff) !important;
+        background-size: 400% 400% !important;
+        animation: gradientBG 10s ease infinite !important;
+    }
+    
+    [data-testid="stSidebar"] {
+        background-color: rgba(255, 255, 255, 0.4) !important;
+        backdrop-filter: blur(8px) !important;
+    }
+    [data-testid="stHeader"] { background: transparent !important; }
 
-    for num in range(1, 10):
-        if is_valid(board, row, col, num):
-            board[row, col] = num
-            counter[0] += 1
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* Bàn cờ Sudoku */
+    .sudoku-container { display: flex; justify-content: center; margin-top: 10px; margin-bottom: 20px; }
+    .sudoku-table { 
+        border-collapse: collapse; border: 4px solid #475569; 
+        font-family: 'Nunito', sans-serif; box-shadow: 0 15px 35px rgba(0,0,0,0.15); 
+        background: rgba(255, 255, 255, 0.6); 
+        backdrop-filter: blur(10px); border-radius: 12px; overflow: hidden; 
+    }
+    .sudoku-cell { width: 60px; height: 60px; text-align: center; vertical-align: middle; font-size: 28px; border: 1px solid #94a3b8; transition: all 0.1s ease-in-out; }
+    .sudoku-cell.bold-right { border-right: 3px solid #475569; }
+    .sudoku-cell.bold-bottom { border-bottom: 3px solid #475569; }
+    
+    .sudoku-cell.original { color: #1e293b; background-color: rgba(255, 255, 255, 0.9); font-weight: 900; }
+    .sudoku-cell.ai-filled { color: white; background-color: #fb7185; font-weight: 900; transform: scale(1.1); border-radius: 8px; box-shadow: 0 4px 10px rgba(251, 113, 133, 0.5); position: relative; z-index: 10; }
+    .sudoku-cell.empty { color: transparent; }
+    </style>
+    """, 
+    unsafe_allow_html=True
+)
+
+# ==========================================
+# 3. HÀM TẠO HTML BÀN CỜ
+# ==========================================
+def get_board_html(current_board, original_board):
+    html = '<div class="sudoku-container"><table class="sudoku-table">'
+    for i in range(9):
+        html += "<tr>"
+        for j in range(9):
+            val = current_board[i][j]
+            orig_val = original_board[i][j]
+            classes = ["sudoku-cell"]
+            if j in [2, 5]: classes.append("bold-right")
+            if i in [2, 5]: classes.append("bold-bottom")
             
-            # --- RENDER GIAO DIỆN ---
-            board_placeholder.dataframe(pd.DataFrame(board).replace(0, ""), use_container_width=True)
-            metrics_placeholder.markdown(f"**⚡ Đang giải (Backtracking)... | Số bước thử (Steps): {counter[0]}**")
-            time.sleep(sleep_time)
+            if orig_val != 0:
+                classes.append("original")
+                cell_str = str(orig_val)
+            elif val != 0:
+                classes.append("ai-filled")
+                cell_str = str(val)
+            else:
+                classes.append("empty")
+                cell_str = ""
+            html += f'<td class="{" ".join(classes)}">{cell_str}</td>'
+        html += "</tr>"
+    html += '</table></div>'
+    return html
 
-            if solve_backtracking_animated(board, counter, board_placeholder, metrics_placeholder, sleep_time):
-                return True
+# ==========================================
+# 4. DATA & SESSION STATE
+# ==========================================
+@st.cache_data
+def load_data():
+    if os.path.exists("data/processed_sudoku.csv"):
+        return pd.read_csv("data/processed_sudoku.csv")
+    return None
 
-            # Quay lui
-            board[row, col] = 0
-            # --- RENDER QUAY LUI ---
-            board_placeholder.dataframe(pd.DataFrame(board).replace(0, ""), use_container_width=True)
-            time.sleep(sleep_time)
+df_sudoku = load_data()
 
+fallback_board = np.array([
+    [5, 3, 0, 0, 7, 0, 0, 0, 0], [6, 0, 0, 1, 9, 5, 0, 0, 0], [0, 9, 8, 0, 0, 0, 0, 6, 0],
+    [8, 0, 0, 0, 6, 0, 0, 0, 3], [4, 0, 0, 8, 0, 3, 0, 0, 1], [7, 0, 0, 0, 2, 0, 0, 0, 6],
+    [0, 6, 0, 0, 0, 0, 2, 8, 0], [0, 0, 0, 4, 1, 9, 0, 0, 5], [0, 0, 0, 0, 8, 0, 0, 7, 9]
+])
+
+def pick_random(df):
+    if df is not None and not df.empty:
+        row = df.sample(1).iloc[0]
+        return np.array([int(x) for x in row['quizzes']]).reshape(9, 9), row['difficulty']
+    return fallback_board, "Default"
+
+if 'original_board' not in st.session_state:
+    b_arr, diff = pick_random(df_sudoku)
+    st.session_state.original_board = b_arr.copy()
+    st.session_state.current_board = b_arr.copy()
+    st.session_state.current_diff = diff
+
+# ==========================================
+# 5. LOGIC AI CORE
+# ==========================================
+def is_valid(b, r, c, n):
+    if n in b[r, :]: return False
+    if n in b[:, c]: return False
+    br, bc = (r//3)*3, (c//3)*3
+    if n in b[br:br+3, bc:bc+3]: return False
+    return True
+
+def get_empty(b):
+    for r in range(9):
+        for c in range(9):
+            if b[r, c] == 0: return r, c
+    return None
+
+def solve_bt(b, orig_b, cnt, b_ph, m_ph, slp):
+    empty = get_empty(b)
+    if not empty: return True
+    r, c = empty
+    for n in range(1, 10):
+        if is_valid(b, r, c, n):
+            b[r, c] = n
+            cnt[0] += 1
+            b_ph.markdown(get_board_html(b, orig_b), unsafe_allow_html=True)
+            m_ph.info(f"🔄 **Backtracking** | Steps: **{cnt[0]:,}**")
+            time.sleep(slp)
+            if solve_bt(b, orig_b, cnt, b_ph, m_ph, slp): return True
+            b[r, c] = 0
+            b_ph.markdown(get_board_html(b, orig_b), unsafe_allow_html=True)
+            time.sleep(slp)
     return False
 
+class Stats:
+    def __init__(self): self.steps = 0; self.bkt = 0
 
-def solve_csp_animated(board, stats, board_placeholder, metrics_placeholder, sleep_time):
-    """Hàm CSP có vẽ lại bảng sau mỗi bước đi"""
-    domains = initialize_domains(board)
-    
-    def backtrack(current_domains):
-        if not current_domains:
-            return True
-            
-        # Chọn ô MRV
-        min_cell = min(current_domains, key=lambda k: len(current_domains[k]))
-        row, col = min_cell
-        domain = current_domains[min_cell]
-        
-        for num in domain:
+def init_domains(b):
+    doms = {}
+    r_u, c_u, bx_u = [set() for _ in range(9)], [set() for _ in range(9)], [set() for _ in range(9)]
+    for r in range(9):
+        for c in range(9):
+            v = b[r][c]
+            if v != 0:
+                r_u[r].add(v); c_u[c].add(v); bx_u[(r//3)*3+(c//3)].add(v)
+    for r in range(9):
+        for c in range(9):
+            if b[r][c] == 0:
+                doms[(r, c)] = set(range(1,10)) - (r_u[r] | c_u[c] | bx_u[(r//3)*3+(c//3)])
+    return doms
+
+def solve_csp(b, orig_b, stats, b_ph, m_ph, slp):
+    doms = init_domains(b)
+    def backtrack(curr_doms):
+        if not curr_doms: return True
+        cell = min(curr_doms, key=lambda k: len(curr_doms[k]))
+        r, c = cell
+        for n in curr_doms[cell]:
             stats.steps += 1
-            board[row][col] = num
+            b[r][c] = n
+            b_ph.markdown(get_board_html(b, orig_b), unsafe_allow_html=True)
+            m_ph.info(f"🚀 **CSP + MRV + FC** | Steps: **{stats.steps:,}** | Quay lui: **{stats.bkt:,}**")
+            time.sleep(slp)
             
-            # --- RENDER GIAO DIỆN ---
-            board_placeholder.dataframe(pd.DataFrame(board).replace(0, ""), use_container_width=True)
-            metrics_placeholder.markdown(f"**⚡ Đang giải (CSP)... | Số bước (Steps): {stats.steps} | Quay lui: {stats.backtracks}**")
-            time.sleep(sleep_time)
+            nxt_doms = {}
+            fc_fail = False
+            br, bc = (r//3)*3, (c//3)*3
+            for nb, n_dom in curr_doms.items():
+                if nb == cell: continue
+                nr, nc = nb
+                if nr == r or nc == c or (br <= nr < br+3 and bc <= nc < bc+3):
+                    if n in n_dom:
+                        new_dom = n_dom.copy()
+                        new_dom.remove(n)
+                        if not new_dom: fc_fail = True; break
+                        nxt_doms[nb] = new_dom
+                    else: nxt_doms[nb] = n_dom
+                else: nxt_doms[nb] = n_dom
             
-            next_domains = {}
-            fc_failed = False
-            box_r, box_c = (row // 3) * 3, (col // 3) * 3
-            
-            for neighbor, n_domain in current_domains.items():
-                if neighbor == min_cell: continue
-                nr, nc = neighbor
-                if (nr == row or nc == col or (box_r <= nr < box_r + 3 and box_c <= nc < box_c + 3)):
-                    if num in n_domain:
-                        new_domain = n_domain.copy()
-                        new_domain.remove(num)
-                        if len(new_domain) == 0:
-                            fc_failed = True
-                            break 
-                        next_domains[neighbor] = new_domain
-                    else:
-                         next_domains[neighbor] = n_domain
-                else:
-                    next_domains[neighbor] = n_domain
-            
-            if not fc_failed:
-                if backtrack(next_domains):
-                    return True
-                    
-            # Quay lui
-            board[row][col] = 0
-            stats.backtracks += 1
-            # --- RENDER QUAY LUI ---
-            board_placeholder.dataframe(pd.DataFrame(board).replace(0, ""), use_container_width=True)
-            time.sleep(sleep_time)
-            
+            if not fc_fail:
+                if backtrack(nxt_doms): return True
+            b[r][c] = 0
+            stats.bkt += 1
+            b_ph.markdown(get_board_html(b, orig_b), unsafe_allow_html=True)
+            time.sleep(slp)
         return False
-
-    return backtrack(domains)
-
-# ==========================================
-# GIAO DIỆN CỘT TRÁI (ĐIỀU KHIỂN & ĐẦU VÀO)
-# ==========================================
-col_left, col_right = st.columns([1, 2])
-
-with col_left:
-    st.header("⚙️ Bảng điều khiển")
-    
-    # 1. Tốc độ mô phỏng
-    speed = st.slider("Tốc độ mô phỏng (Animation Speed)", min_value=0.0, max_value=0.5, value=0.05, step=0.01)
-    
-    # 2. Chọn thuật toán giải
-    algorithm = st.selectbox(
-        "Chọn thuật toán giải:",
-        ("Quay lui (Backtracking)", "CSP + Heuristic MRV + Forward Checking")
-    )
-    
-    st.info("💡 Tính năng tải bàn cờ từ file CSV (Dataset của Thành viên B) sẽ được cập nhật tại đây.")
-    sample_board_data = np.array([
-        [5, 3, 0, 0, 7, 0, 0, 0, 0],
-        [6, 0, 0, 1, 9, 5, 0, 0, 0],
-        [0, 9, 8, 0, 0, 0, 0, 6, 0],
-        [8, 0, 0, 0, 6, 0, 0, 0, 3],
-        [4, 0, 0, 8, 0, 3, 0, 0, 1],
-        [7, 0, 0, 0, 2, 0, 0, 0, 6],
-        [0, 6, 0, 0, 0, 0, 2, 8, 0],
-        [0, 0, 0, 4, 1, 9, 0, 0, 5],
-        [0, 0, 0, 0, 8, 0, 0, 7, 9]
-    ])
-    
-    # Hai lựa chọn giải
-    solve_instantly = st.button("🚀 GIẢI NGAY LẬP TỨC", use_container_width=True)
-    solve_animated = st.button("▶️ GIẢI TỪNG BƯỚC (ANIMATION)", use_container_width=True, type="primary")
+    return backtrack(doms)
 
 # ==========================================
-# GIAO DIỆN CỘT PHẢI (HIỂN THỊ KẾT QUẢ)
+# 6. GIAO DIỆN HIỂN THỊ CHÍNH
 # ==========================================
-with col_right:
-    st.subheader("Bàn cờ Sudoku")
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/1055/1055661.png", width=60)
+    st.markdown("## 🎯 Bảng Điều Khiển")
     
-    # Placeholder để render lại bảng liên tục
-    board_placeholder = st.empty()
-    # Placeholder cho bộ đếm steps real-time
-    metrics_placeholder = st.empty()
-    
-    # Hiển thị bàn cờ ban đầu
-    board_placeholder.dataframe(pd.DataFrame(sample_board_data).replace(0, ""), use_container_width=True)
-    metrics_placeholder.markdown("**Sẵn sàng giải...**")
-    
-    if solve_animated:
-        working_board = sample_board_data.copy()
+    st.markdown("### 🎲 Bốc Đề Random")
+    if st.button("🎲 Chọn Ngẫu Nhiên", type="primary", use_container_width=True):
+        b_arr, diff = pick_random(df_sudoku)
+        st.session_state.original_board = b_arr.copy()
+        st.session_state.current_board = b_arr.copy()
+        st.session_state.current_diff = diff
+        st.rerun()
         
-        start_time = time.time()
-        is_solved = False
-        
-        if algorithm == "Quay lui (Backtracking)":
-            counter = [0]
-            # Gọi hàm có animation
-            is_solved = solve_backtracking_animated(working_board, counter, board_placeholder, metrics_placeholder, speed)
-        
-        elif algorithm == "CSP + Heuristic MRV + Forward Checking":
-            stats = CSPStats()
-            # Gọi hàm có animation, chuyển sang dạng list
-            is_solved = solve_csp_animated(working_board.tolist(), stats, board_placeholder, metrics_placeholder, speed)
+    st.markdown("---")
+    st.markdown("### 🔍 Chọn Đề Cụ Thể")
+    if df_sudoku is not None:
+        sel_diff = st.selectbox("Lọc độ khó:", ["Easy", "Medium", "Hard", "Extreme"])
+        f_df = df_sudoku[df_sudoku['difficulty'] == sel_diff]
+        opts = {f"Đề số {idx + 1} ({r['empty_cells']} ô trống)": idx for idx, r in f_df.iterrows()}
+        sel_opt = st.selectbox("Danh sách đề:", list(opts.keys()))
+        if st.button("Tải Đề Này", use_container_width=True):
+            idx = opts[sel_opt]
+            b_arr = np.array([int(x) for x in df_sudoku.loc[idx, 'quizzes']]).reshape(9, 9)
+            st.session_state.original_board = b_arr.copy()
+            st.session_state.current_board = b_arr.copy()
+            st.session_state.current_diff = sel_diff
+            st.rerun()
             
-        end_time = time.time()
-        time_ms = (end_time - start_time) * 1000
+    st.markdown("---")
+    st.markdown("### 🤖 Cấu Hình AI")
+    algo = st.selectbox("Thuật toán:", ("CSP + Heuristic MRV + FC", "Quay lui (Backtracking)"))
+    spd = st.slider("Tốc độ giải bài", 0.0, 0.2, 0.05, 0.01)
+    btn_solve = st.button("▶️ AI GIẢI NGAY", use_container_width=True, type="primary")
+
+# Khu vực hiển thị bảng
+st.markdown(f"<h1 style='text-align: center; color: #1e293b;'>🦄 SUDOKU AI SOLVER</h1>", unsafe_allow_html=True)
+st.markdown(f"<h3 style='text-align: center; color: #475569;'>Mức độ hiện tại: {st.session_state.current_diff}</h3>", unsafe_allow_html=True)
+
+b_place = st.empty()
+m_place = st.empty()
+
+b_place.markdown(get_board_html(st.session_state.current_board, st.session_state.original_board), unsafe_allow_html=True)
+
+if btn_solve:
+    wb = st.session_state.original_board.copy()
+    ob = st.session_state.original_board.copy()
+    t_start = time.time()
+    solved = False
+    
+    if "Backtracking" in algo:
+        cnt = [0]
+        solved = solve_bt(wb, ob, cnt, b_place, m_place, spd)
+    else:
+        stt = Stats()
+        solved = solve_csp(wb.tolist(), ob.tolist(), stt, b_place, m_place, spd)
         
-        if is_solved:
-            st.success("✅ Đã tìm thấy lời giải thành công!")
-            st.balloons()
+    t_end = time.time()
+    
+    if solved:
+        m_place.success(f"🎉 **Hoàn thành xuất sắc!** AI đã giải xong trong {(t_end-t_start)*1000:.2f} mili-giây.")
+        st.balloons()
