@@ -11,25 +11,29 @@ def benchmark_backtracking(board):
     
     stats = SolverStats() # Tạo đối tượng để lưu trữ số bước
     
+    working_board = board.copy()
+    
     start_time = time.perf_counter() # Bắt đầu đo hiệu suất
     
-    solved = solve_backtracking(board, stats) # Giải Sudoku và truyền đối tượng stats để theo dõi số bước
+    solved = solve_backtracking(working_board, stats) # Giải Sudoku và truyền đối tượng stats để theo dõi số bước
     
     end_time = time.perf_counter() # Kết thúc đo hiệu suất
     
-    is_correct = verify_solution(board) # Sau khi kết thúc đo hiệu xuất, thực hiện kiểm tra đồ án
-    
     # Tính thời gian thực thi
-    execution_time = (
+    execution_time = round(
         
-        end_time - start_time 
-        
-    ) * 1000 # Chuyển đổi thời gian sang milliseconds
-
+        (end_time - start_time) * 1000,
+        3 
+    )# Chuyển đổi thời gian sang milliseconds
+    
+    
+    is_correct = verify_solution(working_board) if solved else False # Sau khi kết thúc đo hiệu xuất, thực hiện kiểm tra đồ án
+    
     return {
         "solved": solved,
         "correct": is_correct,
         "time_ms": execution_time,
-        "steps": stats.steps
+        "steps": stats.steps,
+        "backtracks": stats.backtracks
     }
     

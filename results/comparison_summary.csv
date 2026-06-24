@@ -1,0 +1,5 @@
+difficulty,Avg_Empty_Cells,BT_Time(ms),CSP_Time(ms),FC_Time(ms),BT_Steps,CSP_Steps,FC_Steps,BT_Backtracks,CSP_Backtracks,FC_Backtracks,BT_Accuracy(%),CSP_Accuracy(%),FC_Accuracy(%),Speedup_CSP,Steps_Red_CSP,Speedup_FC,Steps_Red_FC,Backtrack_Red_CSP,Backtrack_Red_FC,Fastest
+Easy,45.94,3.61,5.93,0.78,857.0,45.94,45.94,69.68,0.0,0.0,100.0,100.0,100.0,0.61,18.65,4.65,18.65,,,FC
+Medium,47.0,3.93,5.7,0.92,917.2,47.0,47.0,75.73,0.0,0.0,100.0,100.0,100.0,0.69,19.51,4.28,19.51,,,FC
+Hard,48.0,4.8,7.17,0.77,1111.31,48.0,48.0,96.94,0.0,0.0,100.0,100.0,100.0,0.67,23.15,6.24,23.15,,,FC
+Extreme,49.11,6.7,7.73,0.81,1758.95,49.11,49.11,168.2,0.0,0.0,100.0,100.0,100.0,0.87,35.82,8.25,35.82,,,FC

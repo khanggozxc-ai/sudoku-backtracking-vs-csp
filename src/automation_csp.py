@@ -8,7 +8,7 @@ from tracker_csp import benchmark_csp
 df = pd.read_csv(
     "data/processed_sudoku.csv", 
     dtype={"quizzes": str,
-           "solution": str
+           "solutions": str
            }
 )
 
@@ -42,8 +42,10 @@ for index, row in df.iterrows():
         "time_ms": benchmark["time_ms"],
         "solved": benchmark["solved"],
         "correct": benchmark["correct"],
-        "steps": benchmark["steps"]
+        "steps": benchmark["steps"],
+        "backtracks": benchmark["backtracks"]
     })
+    
     
     
     
@@ -55,7 +57,8 @@ for index, row in df.iterrows():
         f"[{index+1:03d}/{len(df)}]"
         f"{difficulty:<8} | "
         f"{benchmark['time_ms']:.3f} ms | "
-        f"Steps: {benchmark['steps']}"
+        f"Steps: {benchmark['steps']} | "
+        f"Backtracks: {benchmark['backtracks']}"
     )
 
 
@@ -66,10 +69,8 @@ for index, row in df.iterrows():
 # CHuyển đổi mảng kết quả thành DataFrame để dễ thao tác
 
 results_df = pd.DataFrame(results)
-
-print(results_df.columns)
-
 results_df["time_ms"] = results_df["time_ms"].round(3)
+results_df["backtracks"] = results_df["backtracks"].astype(int)
 
 # THứ tự độ khó
 difficulty_order = [
@@ -85,9 +86,8 @@ results_df["difficulty"] = pd.Categorical(
     ordered = True
 )
 
-print("\n Sample Resulft")
+print("\n Sample Results")
 print("="*60)
-
 print(results_df.head(10).to_string(index=False))
 
 #===============================
@@ -104,9 +104,17 @@ solved_count = results_df["solved"].sum()
 
 correct_count = results_df["correct"].sum()
 
-print(f"\nSolved: {solved_count}/{total}")
+print(
+    f"\n👉 Tỷ lệ giải xong: "
+    f"{solved_count}/{total} "
+    f"({solved_count / total * 100:.2f}%)"
+)
 
-print(f"Correct: {correct_count}/{total}")
+print(
+    f"👉 Tỷ lệ nghiệm đúng: "
+    f"{correct_count}/{total} "
+    f"({correct_count / total * 100:.2f}%)"
+)
 
 # Thống kê Empty Cells
 
@@ -119,7 +127,7 @@ empty_summary = (
     .agg(["mean", "min", "max"])
 )
 
-print(empty_summary)
+print(empty_summary.round(2))
 
 #======================
 # THỐNG KÊ HIỆU NĂNG
@@ -129,7 +137,8 @@ print("="*60)
 
 summary = results_df.groupby("difficulty", observed=True).agg({
     "time_ms": ["mean", "min", "max"],
-    "steps": ["mean", "min", "max"]
+    "steps": ["mean", "min", "max"],
+    "backtracks": ["mean", "min", "max"]
 })
 
 print(summary.round(2))
@@ -147,20 +156,13 @@ results_df.to_csv(
 )
 # Tổng kết
 
-print("\n" + "="*60)
+# Tổng kết chặng đường chạy kịch bản thực nghiệm
+print("\n" + "=" * 60)
 print("CSP BENCHMARK SUMMARY")
-print("="*60)
+print("=" * 60)
+print(f"Total puzzles evaluated: {total}\n")
+print(results_df["difficulty"].value_counts().sort_index())
 
-print(f"Total puzzles: {total}\n")
-
-print(
-    results_df["difficulty"]
-    .value_counts()
-    .sort_index()
-)
-
-print("\nResults saved:")
-
-print("results/csp_results.csv")
-
-print("="*60)
+print("\nKết quả thực nghiệm CSP đã được lưu trữ thành công tại:")
+print("Đường dẫn: results/csp_results.csv")
+print("=" * 60)

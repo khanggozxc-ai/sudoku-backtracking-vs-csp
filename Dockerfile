@@ -1,16 +1,40 @@
+# Sử dụng hình ảnh Python chính thức bản slim để tối ưu hóa dung lượng Container
 FROM python:3.11-slim
 
-# Thiết lập thư mục làm việc bên trong container
+# # =======================================================
+# # THIẾT LẬP CÁC BIẾN MÔI TRƯỜNG LÕI
+# # =======================================================
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV MPLBACKEND=Agg
+
+# # =======================================================
+# # THƯ MỤC LÀM VIỆC BÊN TRONG CONTAINER
+# # =======================================================
 WORKDIR /app
 
-# Cài đặt các thư viện lõi phục vụ tính toán và vẽ đồ thị
-RUN pip install --no-cache-dir pandas matplotlib
+# # =======================================================
+# # CÀI ĐẶT TOÀN BỘ DEPENDENCIES (KHÓA PHIÊN BẢN AN TOÀN)
+# # =======================================================
+RUN pip install --no-cache-dir \
+    pandas==2.3.1 \
+    matplotlib==3.10.5 \
+    numpy \
+    streamlit
 
-# Sao chép toàn bộ mã nguồn dự án vào container
+# # =======================================================
+# # SAO CHÉP MÃ NGUỒN VÀ CẤP QUYỀN SCRIPT ĐIỀU PHỐI
+# # =======================================================
 COPY . .
-
-# Cấp quyền thực thi cho file kịch bản Bash
 RUN chmod +x run_pipeline.sh
 
-# Thiết lập lệnh mặc định khi container khởi động
-CMD ["./run_pipeline.sh"]
+# # =======================================================
+# # MỞ CỔNG KẾT NỐI CHO ĐỒ HỌA WEB
+# # =======================================================
+EXPOSE 8501
+
+# # =======================================================
+# # LỆNH KHỞI CHẠY TỐI CAO (PIPELINE -> STREAMLIT WEB GUI)
+# # =======================================================
+# Đã đồng bộ chuẩn xác đường dẫn thực tế của file app.py theo sơ đồ src/streamlit_app/app.py
+CMD ["bash", "-c", "./run_pipeline.sh && streamlit run streamlit_app/app.py --server.address 0.0.0.0 --server.port 8501"]

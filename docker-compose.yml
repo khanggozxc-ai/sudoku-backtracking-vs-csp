@@ -1,10 +1,20 @@
-
-
 services:
   sudoku-pipeline:
     build: .
     container_name: sudoku_ai_pipeline
+    # MỞ CỔNG CHÍ MẠNG: Đẩy cổng 8501 từ container ra máy thật để bồ bật trình duyệt xem Web
+    ports:
+      - "8501:8501"
+    
+    # Gom hết các cấu hình hệ thống vào đây cho sạch code
+    environment:
+      - MPLBACKEND=Agg
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      
     volumes:
       - ./data:/app/data
       - ./results:/app/results
       - ./charts:/app/charts
+      
+    tty: true

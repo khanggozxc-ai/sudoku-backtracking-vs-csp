@@ -6,7 +6,9 @@
 class SolverStats:
     
     def __init__(self):
+        
         self.steps = 0
+        self.backtracks = 0
         
         
 def find_empty(board): 
@@ -66,8 +68,11 @@ def is_valid_board(board, num, pos):
 # Hàm giải Sudoku bằng thuật toán Backtracking
 #===============================================
         
-def solve_backtracking(board, stats): 
+def solve_backtracking(board, stats=None): 
     
+    if stats is None:
+        stats = SolverStats()
+        
     empty = find_empty(board) 
     
     if not empty:
@@ -87,6 +92,7 @@ def solve_backtracking(board, stats):
                 return True
             
             board[row][col] = 0 # Nếu các bước sao bị kẹt, xóa số vừa đặt bằng cách gán về 0 và tiếp tục thử số tiếp theo
+            stats.backtracks += 1
             
     return False # nếu thử từ 1-9 mà không có số nào hợp lệ, trả về False 
 
@@ -137,3 +143,36 @@ def verify_solution(board):
                 return False
 
     return True
+
+find_empty_cell = find_empty
+is_valid = is_valid_board
+
+if __name__ == "__main__":
+    sample_board = [
+        [5, 3, 0, 0, 7, 0, 0, 0, 0],
+        [6, 0, 0, 1, 9, 5, 0, 0, 0],
+        [0, 9, 8, 0, 0, 0, 0, 6, 0],
+        [8, 0, 0, 0, 6, 0, 0, 0, 3],
+        [4, 0, 0, 8, 0, 3, 0, 0, 1],
+        [7, 0, 0, 0, 2, 0, 0, 0, 6],
+        [0, 6, 0, 0, 0, 0, 2, 8, 0],
+        [0, 0, 0, 4, 1, 9, 0, 0, 5],
+        [0, 0, 0, 0, 8, 0, 0, 7, 9]
+    ]
+    
+    test_stats = SolverStats()
+    
+    print("Bàn cờ mẫu ban đầu:")
+    
+    for r in sample_board: print(r)
+        
+    solved = solve_backtracking(sample_board, test_stats)
+    
+    print("\n" + "="*40)
+    print("KẾT QUẢ KIỂM THỬ ĐỘC LẬP")
+    print("="*40)
+    
+    print("Solved Status: ", solved)
+    print("Total Steps: ", test_stats.steps)
+    print("Backtracks: ", test_stats.backtracks)
+    print("Correctness: ", verify_solution(sample_board))

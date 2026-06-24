@@ -15,44 +15,57 @@ def benchmark_csp(board):
     
     solved = solve_csp(board, stats) # Giải Sudoku và truyền đối tượng stats để theo dõi số bước
     
-    
     end_time = time.perf_counter() # Kết thúc đo hiệu suất
     
-    is_correct = verify_solution(board)
-    
     # Tính thời gian thực thi
-    execution_time = (
+    execution_time = round(
         
-        end_time - start_time 
-        
-    ) * 1000 # Chuyển đổi thời gian sang milliseconds
+        (end_time - start_time ) * 1000, 
+        3
+    ) # Chuyển đổi thời gian sang milliseconds
 
+    is_correct = verify_solution(board) if solved else False
+    
     return {
         "solved": solved,
         "correct": is_correct,
         "time_ms": execution_time,
-        "steps": stats.steps
+        "steps": stats.steps,
+        "backtracks": stats.backtracks
     }
     
+# ================================================
+# Kiểm thử độc lập
+# ================================================
 
 if __name__ == "__main__":
     
-    from data_loader import string_to_board
     import pandas as pd
     
-    df = pd.read_csv("data/processed_sudoku.csv")
+    from data_loader import string_to_board
+    
+    df = pd.read_csv(
+        "data/processed_sudoku.csv",
+        dtype={
+            "quizzes": str,
+            "solutions": str
+        }
+    )
     
     puzzle = df.iloc[0]["quizzes"]
     
     board = string_to_board(puzzle)
-    
-    print(board)
+
     result = benchmark_csp(board)
     
     print("\nCSP TEST")
     print("=" * 50)
     
-    print(result)
+    print(f"Solved     : {result['solved']}")
+    print(f"Correct    : {result['correct']}")
+    print(f"Time (ms)  : {result['time_ms']}")
+    print(f"Steps      : {result['steps']}")
+    print(f"Backtracks : {result['backtracks']}")
     
     
    

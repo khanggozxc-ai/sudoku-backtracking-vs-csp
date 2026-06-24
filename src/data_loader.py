@@ -1,4 +1,5 @@
 # Đọc CSV → chuyển thành ma trận NumPy 9x9
+import os
 import numpy as np
 import pandas as pd
 
@@ -14,9 +15,16 @@ def string_to_board(puzzle):
         raise ValueError(
             f"Sudoku phải có 81 ký tự, nhưng hiện tại chỉ có {len(puzzle)} : {puzzle}"
         )
-    numbers = [int(char) for char in str(puzzle)]
-    board = np.array(numbers)
-    return board.reshape(9, 9)
+    if not puzzle.isdigit():
+        raise ValueError(
+            f"Puzzle chứa ký tự không hợp lệ: {puzzle}"
+        )
+    numbers = np.fromiter(
+        (int(c) for c in puzzle),
+        dtype=np.int8
+    )
+    
+    return numbers.reshape(9, 9)
 
 def count_empty_cells(board):
     """Đến số ô trống (ô có giá trị là 0) trong bảng sudoku"""
@@ -24,11 +32,12 @@ def count_empty_cells(board):
 
 def count_empty_cells_in_string(puzzle):
     """Đếm số ô trống trực tiếp từ chuỗi sudoku"""
+    puzzle = str(puzzle)
     return puzzle.count('0')
 
 def classify_difficulty_from_string(puzzle):
     """Phân loại độ khó dựa trên số ô trống"""
-    empty = puzzle.count('0')
+    empty = str(puzzle).count('0')
     
     if empty <= 46:
         return "Easy"
@@ -50,7 +59,21 @@ def classify_difficulty_from_string(puzzle):
 if __name__ == "__main__":    
     # đọc file CSV chứa dữ liệu sudoku
     print("Loading raw dataset...")
-    df = pd.read_csv("data/sudoku.csv")
+    df = pd.read_csv(
+        "data/sudoku.csv",
+        dtype={
+            "quizzes": str,
+            "solutions": str
+        }             
+    )
+    
+    required_columns = ["quizzes"]
+
+    for col in required_columns:
+        if col not in df.columns:
+            raise ValueError(
+                f"Thiếu cột bắt buộc: {col}"
+            )
 
     print("="*50)
     print('DATASET INFORMATION')
@@ -74,7 +97,7 @@ if __name__ == "__main__":
         print(row)
         
     #===============================
-    # Classify Entire Dataset
+    # Phân loại toàn bộ Dataset
     #===============================
 
     print("\nClassifying dataset...")
@@ -103,11 +126,18 @@ if __name__ == "__main__":
     #===============================
 
     print("\nĐang trích xuất mỗi độ khó 100 bài...")
+    
+    # Tính toán size an toàn để chống crash nếu tập test nhỏ hơn 100 bài
+    
+    easy_size = min(100, len(df[df['difficulty'] == 'Easy']))
+    medium_size = min(100, len(df[df['difficulty'] == 'Medium']))
+    hard_size = min(100, len(df[df['difficulty'] == 'Hard']))
+    extreme_size = min(100, len(df[df['difficulty'] == 'Extreme']))
 
-    df_easy = df[df['difficulty'] == 'Easy'].sample(100, random_state=42) # Lấy 100 bài đầu tiên có độ khó Easy
-    df_medium = df[df['difficulty'] == 'Medium'].sample(100, random_state=42) # Lấy 100 bài đầu tiên có độ khó Medium
-    df_hard = df[df['difficulty'] == 'Hard'].sample(100, random_state=42) # Lấy 100 bài đầu tiên có độ khó Hard
-    df_extreme = df[df['difficulty'] == 'Extreme'].sample(100, random_state=42) # Lấy 100 bài đầu tiên có độ khó Extreme
+    df_easy = df[df['difficulty'] == 'Easy'].sample(easy_size, random_state=42) # Lấy 100 bài đầu tiên có độ khó Easy
+    df_medium = df[df['difficulty'] == 'Medium'].sample(medium_size, random_state=42) # Lấy 100 bài đầu tiên có độ khó Medium
+    df_hard = df[df['difficulty'] == 'Hard'].sample(hard_size, random_state=42) # Lấy 100 bài đầu tiên có độ khó Hard
+    df_extreme = df[df['difficulty'] == 'Extreme'].sample(extreme_size, random_state=42) # Lấy 100 bài đầu tiên có độ khó Extreme
 
     # Gộp 4 tập nhỏ lại thành tập 400 bài
     final_df = pd.concat([df_easy, df_medium, df_hard, df_extreme])
@@ -116,6 +146,7 @@ if __name__ == "__main__":
     final_df = final_df.reset_index(drop=True)
 
     # Lưu thành file mới 
+    os.makedirs("data", exist_ok=True)
     final_df.to_csv("data/processed_sudoku.csv", index=False)
 
 

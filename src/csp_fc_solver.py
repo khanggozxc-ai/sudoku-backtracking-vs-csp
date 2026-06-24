@@ -1,12 +1,15 @@
-import numpy as np
 
-class CSPStats:
+class CSPFCStats:
     def __init__(self):
         self.steps = 0
         self.backtracks = 0
 
 def initialize_domains(board):
-    """Tính sẵn các số khả thi cho từng ô trống khi bắt đầu ván cờ (TỐI ƯU HÓA)"""    
+    """
+    Khởi tạo domain ban đầu cho toàn bộ ô trống.
+    Trả về:
+        {(row,col): {các giá trị khả thi}}
+    """    
     domains = {}
     
     # 1. Gom trước dữ liệu hàng, cột, block để quét siêu nhanh
@@ -16,19 +19,28 @@ def initialize_domains(board):
     
     for r in range(9):
         for c in range(9):
+            
             val = board[r][c]
+            
             if val != 0:
+                
                 rows_used[r].add(val)
                 cols_used[c].add(val)
+                
                 box_idx = (r // 3) * 3 + (c // 3)
+                
                 boxes_used[box_idx].add(val)
                 
     # 2. Xây dựng domain cho các ô trống dựa trên dữ liệu đã gom
     all_nums = set(range(1, 10))
+    
     for r in range(9):
         for c in range(9):
+            
             if board[r][c] == 0:
+                
                 box_idx = (r // 3) * 3 + (c // 3)
+                
                 # Dùng phép toán tập hợp (Set operations) của Python: Trừ đi các số đã dùng
                 used = rows_used[r] | cols_used[c] | boxes_used[box_idx]
                 domains[(r, c)] = all_nums - used
@@ -38,55 +50,80 @@ def initialize_domains(board):
 # =======================================================
 # Hàm giải Sudoku bằng CSP + MRV + Active Forward Checking
 # =======================================================     
-def solve_csp(board, stats):
+def solve_csp_fc(board, stats):
+    if stats is None:
+        stats = CSPFCStats()
+        
     domains = initialize_domains(board)
     
+    # Kiểm tra puzzle lỗi 
+    
+    for domain in domains.values():
+        
+        if len(domain) == 0:
+            return False
+        
     def backtrack(current_domains):
+        
         if not current_domains:
             return True
             
         # 1. HEURISTIC MRV: Chọn ô trống có ít lựa chọn nhất 
         min_cell = min(current_domains, key=lambda k: len(current_domains[k]))
+        
         row, col = min_cell
+        
         domain = current_domains[min_cell]
         
         # 2. Thử từng số trong miền giá trị
-        for num in domain:
+        for num in list(domain):
+            
             stats.steps += 1
             board[row][col] = num
             
             # --- BƯỚC LAN TRUYỀN FORWARD CHECKING CHỦ ĐỘNG (TỐI ƯU HÓA COPY) ---
             # Chỉ copy những domain bị ảnh hưởng thay vì copy TOÀN BỘ current_domains
             next_domains = {}
-            fc_failed = False
+            forward_check_failed = False
             
             box_r, box_c = (row // 3) * 3, (col // 3) * 3
             
-            for neighbor, n_domain in current_domains.items():
+            for neighbor, neighbor_domain in current_domains.items():
+                
                 if neighbor == min_cell:
                     continue
                     
                 nr, nc = neighbor
                 
+                same_row = nr == row
+                same_col = nc == col
+                
+                same_box = (
+                    box_r <= nr < box_r + 3 and
+                    box_c <= nc < box_c + 3
+                )
+                
                 # Nếu hàng xóm nằm trong vùng ảnh hưởng và 'num' có trong domain của nó
-                if (nr == row or nc == col or (box_r <= nr < box_r + 3 and box_c <= nc < box_c + 3)):
-                    if num in n_domain:
+                if same_row or same_col or same_box:
+                    if num in neighbor_domain:
                         # Copy và remove số 'num' (Phép toán set - tạo set mới cực nhanh)
-                        new_domain = n_domain.copy()
+                        new_domain = neighbor_domain.copy()
+                        
                         new_domain.remove(num)
                         
-                        # MẮT THẦN FC: Nếu rỗng -> Phát hiện ngõ cụt
                         if len(new_domain) == 0:
-                            fc_failed = True
+                            forward_check_failed = True
                             break 
+                        
                         next_domains[neighbor] = new_domain
                     else:
-                         next_domains[neighbor] = n_domain
+                         next_domains[neighbor] = neighbor_domain
                 else:
                     # Không bị ảnh hưởng thì giữ nguyên tham chiếu để tiết kiệm RAM
-                    next_domains[neighbor] = n_domain
+                    next_domains[neighbor] = neighbor_domain
             
-            if not fc_failed:
+            if not forward_check_failed:
+                
                 if backtrack(next_domains):
                     return True
                     
@@ -102,6 +139,7 @@ def solve_csp(board, stats):
 # Hàm xác minh nghiệm 
 # =======================================================
 def verify_solution(board):
+    
     target = set(range(1, 10))
     
     for row in range(9):
@@ -137,23 +175,24 @@ if __name__ == "__main__":
         [0,0,0,0,8,0,0,7,9]
     ]
     
-    stats = CSPStats()
+    stats = CSPFCStats()
     
     print("Bàn cờ mẫu ban đầu:")
     for row in board:
         print(row)
     
-    solved = solve_csp(board, stats)
+    solved = solve_csp_fc(board, stats)
     
-    print("\nResult")
-    print("="*60)
-    print("Solved:", solved)
-    print("Steps:", stats.steps)
-    print("Backtracks:", stats.backtracks)
-    
+    print("\n" + "=" * 60)
+    print("ACTIVE FORWARD CHECKING TEST")
+    print("=" * 60)
+
+    print("Solved     :", solved)
+    print("Steps      :", stats.steps)
+    print("Backtracks :", stats.backtracks)
+    print("Correct    :", verify_solution(board))
+
     print("\nBoard sau khi giải:\n")
+
     for row in board:
         print(row)
-   
-    print("\nKiểm tra tính chính xác của nghiệm:")
-    print("Correct:", verify_solution(board))

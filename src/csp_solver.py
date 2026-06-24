@@ -58,7 +58,7 @@ def find_mrv_cell(board):
     
     best_cell = None
     best_domain = []
-    best_domain_size = 10
+    best_domain_size = float("inf")
     
     for row in range(9):
         
@@ -72,6 +72,11 @@ def find_mrv_cell(board):
                     
                     return (row, col), domain
                 
+                # MRV tối ưu
+                
+                if len(domain) == 1:
+                    return (row,col), domain
+                
                 if len(domain) < best_domain_size:
                     
                     best_domain_size = len(domain)
@@ -81,9 +86,12 @@ def find_mrv_cell(board):
     return best_cell, best_domain
 
 
-def solve_csp(board, stats):
-    # Chọn ô theo MRV
-    
+def solve_csp(board, stats=None):
+   
+    if stats is None:
+        stats = CSPStats()
+        
+    # Chọn ô theo MRV 
     empty, domain =find_mrv_cell(board)
     
     # Không còn ô trống
@@ -152,6 +160,9 @@ def verify_solution(board):
             
     return True
 
+is_valid = is_valid_board
+find_next_cell = find_mrv_cell
+
 if __name__ == "__main__":
     
     board = [
@@ -175,20 +186,23 @@ if __name__ == "__main__":
     
     solved = solve_csp(board, stats)
     
-    print("\nResult")
-    print("="*60)
+    print("\n" + "=" * 60) 
+    print("KẾT QUẢ KIỂM THỬ CSP + MRV") 
+    print("=" * 60)
     
     print("Solved:", solved)
     print("Steps:", stats.steps)
-    
+    print("Backtracks:", stats.backtracks)
+    print("Correct:", verify_solution(board))
+       
     print("\nBoard sau khi giải:\n")
     for row in board:
         print(row)
    
-    print("Kiểm tra chính xác:")
-    print("Correct:", verify_solution(board))
+
+ 
     
-    print("Backtracks:", stats.backtracks)
+ 
     
 
     
